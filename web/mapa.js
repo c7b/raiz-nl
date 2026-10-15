@@ -77,7 +77,8 @@
     const prioridad = p.score != null ? `Prioridad ${fmt(p.score)}/100 · ` : '';
     return `<h3>${esc(p.nombre)}</h3>
       <div class="meta">${prioridad}${p.objetivo === 'agua' ? 'Agua' : 'Aire'} · ${esc(p.id)}</div>
-      <ul>${razones}</ul>${cuads ? `<b>Cuadrantes de plantación</b><ol>${cuads}</ol>` : ''}
+      <ul>${razones}</ul>${cuads ? `<b>Cuadrantes de plantación</b><ol>${cuads}</ol>
+      <button type="button" class="btn-ver-cuadrantes" data-zona="${esc(p.id)}">Ver sus cuadrantes en el mapa</button>` : ''}
       <button type="button" class="btn-donar-zona" data-zona="${esc(p.id)}">🌳 Donar un árbol aquí</button>`;
   }
 
@@ -100,6 +101,23 @@
   }
 
   function capaCuadrantes() {
+    // Con el mapa alejado, un cuadrante de 250 m mide 1 o 2 píxeles: se dibuja además un punto en su centro
+    const puntos = L.layerGroup();
+    state.datos.cuadrantes.features.forEach((f) => {
+      L.circleMarker(f.properties.centro, { radius: 4, color: '#ffffff', weight: 1.5, fillColor: COLOR[f.properties.objetivo],
+        fillOpacity: 1 }).bindTooltip(`${esc(f.properties.id)} · ${esc(f.properties.nombre)}`).addTo(puntos);
+    });
+    const grupo = L.layerGroup();
+    const ajusta = () => {
+      if (!map.hasLayer(grupo)) return;
+      if (map.getZoom() < 12) puntos.addTo(grupo); else grupo.removeLayer(puntos);
+    };
+    map.on('zoomend', ajusta);
+    grupo.on('add', ajusta);
+    cuadros(grupo);
+    return grupo;
+  }
+  function cuadros(grupo) {
     return L.geoJSON(state.datos.cuadrantes, {
       style: (f) => ({ color: COLOR[f.properties.objetivo], weight: 2.5, fillColor: COLOR[f.properties.objetivo], fillOpacity: 0.55 }),
       onEachFeature: (f, l) => {
@@ -112,8 +130,25 @@
           { maxWidth: 320 });
         l.bindTooltip(`${esc(p.id)} · ${esc(p.nombre)}`, { sticky: true });
       }
-    });
+    }).addTo(grupo);
   }
+
+  // «Ver sus cuadrantes»: acerca el mapa a los cuadrantes de la zona y prende la capa si estaba apagada
+  map.on('popupopen', (e) => {
+    const btn = e.popup.getElement() && e.popup.getElement().querySelector('.btn-ver-cuadrantes');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const fs = state.datos.cuadrantes.features.filter((c) => c.properties.zona_id === btn.dataset.zona);
+      if (!fs.length) return;
+      if (!map.hasLayer(state.capas.cuadrantes)) {
+        state.capas.cuadrantes.addTo(map);
+        const chk = document.querySelector('input[data-capa=cuadrantes]');
+        if (chk) chk.checked = true;
+      }
+      map.closePopup();
+      map.fitBounds(L.geoJSON({ type: 'FeatureCollection', features: fs }).getBounds(), { padding: [50, 50], maxZoom: 15 });
+    });
+  });
 
   function incendiosFiltrados() {
     return state.datos.incendios.features.filter((f) => {

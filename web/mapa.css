@@ -137,3 +137,7 @@ td.n, th.n { text-align: right; }
   background: #dc582a; color: #fff; font: 900 13px Montserrat, system-ui, sans-serif; text-transform: uppercase; cursor: pointer; }
 .btn-donar-zona:hover { background: #c44a1f; }
 @media (max-width: 600px) { .sel-obj span { display: none; } .sel-obj { left: 50px; right: 10px; padding-left: 8px; } }
+
+.btn-ver-cuadrantes { display: block; margin: 6px 0 8px; font: 700 12px "Montserrat", system-ui, sans-serif; color: var(--spruce);
+  background: #fff; border: 1.5px solid var(--spruce); border-radius: 999px; padding: 5px 10px; cursor: pointer; }
+.btn-ver-cuadrantes:hover { background: var(--gray-1); }
