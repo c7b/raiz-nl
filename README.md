@@ -56,3 +56,4 @@ Detalle y endpoints en [docs/FUENTES.md](docs/FUENTES.md).
 
 Sin PRs ni revisiones: `git pull`, cambias, `git commit`, `git push` a `main`. Cada push a `main` se publica solo en
 producción (GitHub Pages, workflow `.github/workflows/deploy.yml`) en 1–2 minutos.
+
