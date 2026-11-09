@@ -14,7 +14,10 @@
   // API de donaciones (backend/). ?api=URL la fuerza; en localhost se busca en el puerto 8001.
   // Sin API, el portal sigue funcionando con compromisos guardados en el navegador.
   const API_BASE = (() => {
-    const q = new URLSearchParams(location.search).get('api');
+    // ?api=URL solo en desarrollo local: en el sitio publicado, un enlace con ?api= hacía que la
+    // página leyera zonas, contadores y el texto a publicar desde el servidor que el enlace dijera.
+    const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+    const q = local ? new URLSearchParams(location.search).get('api') : null;
     if (q) return q.replace(/\/$/, '');
     if (window.RAIZ_API) return window.RAIZ_API;
     return ['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://127.0.0.1:8001' : null;

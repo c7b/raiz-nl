@@ -126,7 +126,9 @@
 
   // Con la API de donaciones (backend/), el contador es el total real de árboles donados
   var api = (function () {
-    var q = new URLSearchParams(location.search).get('api');
+    // ?api=URL solo en desarrollo local (ver app.js).
+    var local = ['localhost', '127.0.0.1'].indexOf(location.hostname) !== -1;
+    var q = local ? new URLSearchParams(location.search).get('api') : null;
     if (q) return q.replace(/\/$/, '');
     if (window.RAIZ_API) return window.RAIZ_API;
     return ['localhost', '127.0.0.1'].indexOf(location.hostname) >= 0 ? 'http://127.0.0.1:8001' : null;

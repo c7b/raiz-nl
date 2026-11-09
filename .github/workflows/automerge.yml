@@ -1,4 +1,7 @@
-# Repo abierto: cualquier PR a main se mergea solo y se publica.
+# Los PR de quienes colaboran en el repo (dueño, miembros, colaboradores) se mergean solos y se publican.
+# Durante el build day (14-oct-2026) esto aplicaba a CUALQUIER cuenta de GitHub: cualquiera podía
+# poner contenido en main y en el sitio publicado sin revisión. Desde el 2026-11-09 los PR de
+# cuentas externas se quedan abiertos para revisión manual.
 # Candados: no se ejecuta código del PR y se rechazan cambios a .github/.
 name: Auto-merge
 on:
@@ -11,6 +14,7 @@ permissions:
   actions: write
 jobs:
   merge:
+    if: contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -18,8 +22,13 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
     steps:
       - name: Rechazar cambios a .github/
+        shell: bash
         run: |
-          if gh pr diff "$PR" --name-only | grep -q '^\.github/'; then
+          set -euo pipefail
+          # La lista de archivos del API incluye el nombre anterior de un rename; `gh pr diff --name-only`
+          # solo da el nuevo, y sin pipefail un fallo del comando se leía como "no toca .github/".
+          files="$(gh api --paginate "repos/$GH_REPO/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)')"
+          if grep -q '^\.github/' <<<"$files"; then
             gh pr comment "$PR" --body "Este PR toca \`.github/\`, así que no se mergea automáticamente. Un mantenedor lo revisará."
             exit 1
           fi
